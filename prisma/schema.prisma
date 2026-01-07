@@ -13,25 +13,101 @@ datasource db {
   provider = "postgresql"
 }
 
+// =========================
+// Enums
+// =========================
+
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+// =========================
+// Models
+// =========================
+
 model User {
-  id        Int    @id @default(autoincrement())
-  name      String 
-  email     String @unique
-  password  String 
-  projects  Project[]
+  id            Int       @id @default(autoincrement())
+  name          String
+  email         String    @unique
+  password      String
+  role          Role      @default(MEMBER)
+  avatar        String?
+  
+  // Relations
+  ownedProjects Project[] @relation("ProjectOwner")
+  assignedTasks Task[]    @relation("TaskAssignee")
+  
+  // Audit
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+  
+  @@index([email])
+  @@map("users")
 }
 
 model Project {
-  id      Int    @id @default(autoincrement())
-  name    String
-  userId  Int 
-  user    User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tasks   Task[]
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String?
+  color       String?
+  
+  // Owner
+  ownerId     Int
+  owner       User      @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  
+  // Relations
+  tasks       Task[]
+  
+  // Audit
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+  
+  @@index([ownerId])
+  @@index([createdAt])
+  @@map("projects")
 }
 
 model Task {
-  id          Int     @id @default(autoincrement())
-  title       String 
-  project     Project @relation(fields: [projectId], references: [id])
-  projectId   Int
+  id           Int          @id @default(autoincrement())
+  title        String
+  description  String?
+  status       TaskStatus   @default(TODO)
+  priority     TaskPriority @default(MEDIUM)
+  dueDate      DateTime?
+  completedAt  DateTime?
+  
+  // Project
+  projectId    Int
+  project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  // Assignee
+  assignedToId Int?
+  assignedTo   User?        @relation("TaskAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  
+  // Audit
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  deletedAt    DateTime?
+  
+  @@index([projectId, status])
+  @@index([assignedToId])
+  @@index([dueDate])
+  @@index([priority])
+  @@map("tasks")
 }
