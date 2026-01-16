@@ -1,11 +1,3 @@
-/*
-  Warnings:
-
-  - You are about to drop the `Project` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `Task` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `User` table. If the table is not empty, all the data it contains will be lost.
-
-*/
 -- CreateEnum
 CREATE TYPE "Role" AS ENUM ('ADMIN', 'MEMBER');
 
@@ -15,20 +7,8 @@ CREATE TYPE "TaskStatus" AS ENUM ('TODO', 'IN_PROGRESS', 'DONE');
 -- CreateEnum
 CREATE TYPE "TaskPriority" AS ENUM ('LOW', 'MEDIUM', 'HIGH', 'URGENT');
 
--- DropForeignKey
-ALTER TABLE "Project" DROP CONSTRAINT "Project_userId_fkey";
-
--- DropForeignKey
-ALTER TABLE "Task" DROP CONSTRAINT "Task_projectId_fkey";
-
--- DropTable
-DROP TABLE "Project";
-
--- DropTable
-DROP TABLE "Task";
-
--- DropTable
-DROP TABLE "User";
+-- CreateEnum
+CREATE TYPE "ProjectRole" AS ENUM ('OWNER', 'ADMIN', 'MEMBER', 'VIEWER');
 
 -- CreateTable
 CREATE TABLE "users" (
@@ -57,6 +37,18 @@ CREATE TABLE "projects" (
     "deletedAt" TIMESTAMP(3),
 
     CONSTRAINT "projects_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "project_members" (
+    "id" SERIAL NOT NULL,
+    "projectId" INTEGER NOT NULL,
+    "userId" INTEGER NOT NULL,
+    "role" "ProjectRole" NOT NULL DEFAULT 'MEMBER',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "project_members_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -90,6 +82,15 @@ CREATE INDEX "projects_ownerId_idx" ON "projects"("ownerId");
 CREATE INDEX "projects_createdAt_idx" ON "projects"("createdAt");
 
 -- CreateIndex
+CREATE INDEX "project_members_projectId_idx" ON "project_members"("projectId");
+
+-- CreateIndex
+CREATE INDEX "project_members_userId_idx" ON "project_members"("userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "project_members_projectId_userId_key" ON "project_members"("projectId", "userId");
+
+-- CreateIndex
 CREATE INDEX "tasks_projectId_status_idx" ON "tasks"("projectId", "status");
 
 -- CreateIndex
@@ -103,6 +104,12 @@ CREATE INDEX "tasks_priority_idx" ON "tasks"("priority");
 
 -- AddForeignKey
 ALTER TABLE "projects" ADD CONSTRAINT "projects_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "project_members" ADD CONSTRAINT "project_members_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "projects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "project_members" ADD CONSTRAINT "project_members_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "tasks" ADD CONSTRAINT "tasks_projectId_fkey" FOREIGN KEY ("projectId") REFERENCES "projects"("id") ON DELETE CASCADE ON UPDATE CASCADE;

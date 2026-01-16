@@ -33,6 +33,7 @@ export class LoginService {
     const payload = {
       sub: user.id,
       email: user.email,
+      role: user.role,
     };
 
     return {
@@ -40,6 +41,7 @@ export class LoginService {
       user: {
         id: user.id,
         email: user.email,
+        role: user.role,
       },
     };
   }
