@@ -3,12 +3,15 @@ import {
   Body,
   Post,
   Get,
-  Param,
+  Req,
+  Delete,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { UserService } from './users.service';
 import { CreateUserDto } from './dto/users.dto';
+import { JwtAuthGuard } from 'src/guards/jwt-auth.guard';
 
 @Controller('users')
 export class UserController {
@@ -23,5 +26,12 @@ export class UserController {
   @Get()
   findUsers() {
     return this.userService.findUsers();
+  }
+
+  @Delete()
+  @UseGuards(JwtAuthGuard)
+  deleteUser(@Req() req) {
+    const userId = req.user.id;
+    return this.userService.deleteUser(userId);
   }
 }

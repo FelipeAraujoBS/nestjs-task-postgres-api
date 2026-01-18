@@ -1,4 +1,8 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateUserDto } from './dto/users.dto';
 import * as bcrypt from 'bcrypt';
@@ -50,6 +54,11 @@ export class UserService {
       },
     });
 
+    if (users.length === 2) {
+      //Length === 2 para desconsiderar os dois Seeds que são próprios do sistema.
+      throw new NotFoundException('Não há nenhum usuário cadastrado!');
+    }
+
     return users;
   }
 
@@ -58,6 +67,21 @@ export class UserService {
       where: { email },
     });
 
+    if (!user) {
+      throw new NotFoundException('Usuário não encontrado!');
+    }
+
     return user;
+  }
+
+  async deleteUser(userId: number) {
+    const user = await this.prismaService.user.delete({
+      where: { id: userId },
+      select: {
+        name: true,
+      },
+    });
+
+    return { message: `Usuário ${user.name} deletado com sucesso!` };
   }
 }
